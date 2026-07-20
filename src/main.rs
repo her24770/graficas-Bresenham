@@ -1,3 +1,4 @@
+mod bmp;
 mod framebuffer;
 mod line;
 mod polygon;
@@ -67,6 +68,9 @@ fn main() {
     fill_polygon(&mut fb, &[&poly4, &poly5], (200, 162, 200)); // lila
     draw_polygon_outline(&mut fb, &poly4, (255, 255, 255));
     draw_polygon_outline(&mut fb, &poly5, (255, 255, 255));
+
+    bmp::save_bmp(&fb, "out.bmp").expect("no se pudo guardar el BMP");
+    println!("Imagen generada: out.bmp");
 
     save_png(&fb, "out.png");
     println!("Imagen generada: out.png");
