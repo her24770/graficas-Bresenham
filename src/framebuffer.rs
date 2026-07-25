@@ -1,10 +1,13 @@
-// Framebuffer: buffer de píxeles en memoria, formato RGB (3 bytes por píxel).
+// Framebuffer: buffer de píxeles en memoria, un u32 por píxel (0xRRGGBB).
+// Este formato es el que espera minifb directamente en Window::update_with_buffer,
+// sin necesidad de convertir nada al mandarlo a la ventana.
 
 pub struct Framebuffer {
     pub width: usize,
     pub height: usize,
-    pub data: Vec<u8>, // RGB plano: data[(y * width + x) * 3 + canal]
-    pub current_color: (u8, u8, u8),
+    pub buffer: Vec<u32>,
+    background_color: u32,
+    current_color: u32,
 }
 
 impl Framebuffer {
@@ -12,30 +15,39 @@ impl Framebuffer {
         Framebuffer {
             width,
             height,
-            data: vec![0; width * height * 3],
-            current_color: (255, 255, 255),
+            buffer: vec![0x000000; width * height],
+            background_color: 0x000000,
+            current_color: 0xFFFFFF,
         }
     }
 
-    pub fn clear(&mut self, color: (u8, u8, u8)) {
-        for pixel in self.data.chunks_mut(3) {
-            pixel[0] = color.0;
-            pixel[1] = color.1;
-            pixel[2] = color.2;
+    pub fn clear(&mut self) {
+        for pixel in self.buffer.iter_mut() {
+            *pixel = self.background_color;
         }
     }
 
-    pub fn set_current_color(&mut self, color: (u8, u8, u8)) {
+    pub fn set_background_color(&mut self, color: u32) {
+        self.background_color = color;
+    }
+
+    pub fn set_current_color(&mut self, color: u32) {
         self.current_color = color;
     }
 
-    pub fn set_pixel(&mut self, x: i32, y: i32) {
-        if x < 0 || y < 0 || x as usize >= self.width || y as usize >= self.height {
-            return;
+    // Pinta (x, y) con el color activo (current_color).
+    pub fn point(&mut self, x: usize, y: usize) {
+        if x < self.width && y < self.height {
+            self.buffer[y * self.width + x] = self.current_color;
         }
-        let idx = (y as usize * self.width + x as usize) * 3;
-        self.data[idx] = self.current_color.0;
-        self.data[idx + 1] = self.current_color.1;
-        self.data[idx + 2] = self.current_color.2;
+    }
+
+    // Lee el color de (x, y). Fuera de rango devuelve el color de fondo.
+    pub fn get_color(&self, x: usize, y: usize) -> u32 {
+        if x < self.width && y < self.height {
+            self.buffer[y * self.width + x]
+        } else {
+            self.background_color
+        }
     }
 }
