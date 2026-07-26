@@ -31,38 +31,49 @@ fn main() {
     let frame_delay = Duration::from_millis(120);
 
     while window.is_open() && !window.is_key_down(Key::Escape) {
-        life::step(&current, &mut next);
-        std::mem::swap(&mut current, &mut next);
-
-        window
-            .update_with_buffer(&current.buffer, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT)
-            .unwrap();
-
+        render(&mut current, &mut next, &mut window);
         std::thread::sleep(frame_delay);
     }
 }
 
+// Un turno completo: calcula el siguiente estado, intercambia los buffers
+// y presenta el resultado en la ventana.
+fn render(current: &mut Framebuffer, next: &mut Framebuffer, window: &mut Window) {
+    life::step(current, next);
+    std::mem::swap(current, next);
+
+    window
+        .update_with_buffer(&current.buffer, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT)
+        .unwrap();
+}
+
 fn place_initial_pattern(fb: &mut Framebuffer) {
-    // Gun: dispara gliders sin parar hacia la esquina inferior derecha.
-    patterns::gosper_glider_gun(fb, 2, 5);
+    // --- Franja superior: estructuras grandes ---
+    patterns::gosper_glider_gun(fb, 2, 2); // dispara gliders sin parar
+    patterns::pulsar(fb, 42, 2);
+    patterns::heavyweight_spaceship(fb, 60, 4);
+    patterns::middleweight_spaceship(fb, 70, 4);
+    patterns::pentadecathlon(fb, 80, 6);
 
-    // Oscillator grande.
-    patterns::pulsar(fb, 50, 5);
+    // --- Franja media: osciladores chicos, still lifes y naves ---
+    patterns::blinker(fb, 5, 32);
+    patterns::toad(fb, 12, 32);
+    patterns::beacon(fb, 20, 32);
+    patterns::block(fb, 28, 32);
+    patterns::beehive(fb, 34, 32);
+    patterns::loaf(fb, 42, 32);
+    patterns::boat(fb, 50, 32);
+    patterns::tub(fb, 58, 32);
+    patterns::r_pentomino(fb, 66, 32);
+    patterns::lightweight_spaceship(fb, 74, 32);
+    patterns::acorn(fb, 85, 32);
 
-    // Spaceships.
-    patterns::lightweight_spaceship(fb, 75, 8);
-    patterns::glider(fb, 10, 65);
-    patterns::glider(fb, 60, 70);
-
-    // Osciladores chicos.
-    patterns::blinker(fb, 10, 30);
-    patterns::toad(fb, 20, 30);
-    patterns::beacon(fb, 30, 30);
-
-    // Still lifes.
-    patterns::block(fb, 45, 30);
-    patterns::beehive(fb, 55, 30);
-    patterns::loaf(fb, 65, 30);
-    patterns::boat(fb, 78, 30);
-    patterns::tub(fb, 88, 30);
+    // --- Franja inferior: methuselahs y gliders sueltos ---
+    patterns::diehard(fb, 10, 55);
+    patterns::glider(fb, 30, 60);
+    patterns::glider(fb, 55, 58);
+    patterns::glider(fb, 75, 62);
+    patterns::glider(fb, 15, 80);
+    patterns::glider(fb, 45, 85);
+    patterns::glider(fb, 70, 80);
 }
