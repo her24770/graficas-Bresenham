@@ -47,33 +47,80 @@ fn render(current: &mut Framebuffer, next: &mut Framebuffer, window: &mut Window
         .unwrap();
 }
 
+// Un organismo a colocar: la función que lo dibuja, y el tamaño de su
+// caja (para poder revisar que no se encime con otros ya colocados).
+struct Organism {
+    place: fn(&mut Framebuffer, i32, i32),
+    w: i32,
+    h: i32,
+}
+
+// Generador pseudo-aleatorio mínimo (xorshift32), con semilla fija para que
+// el patrón inicial sea reproducible entre corridas.
+struct Rng(u32);
+
+impl Rng {
+    fn next(&mut self) -> u32 {
+        self.0 ^= self.0 << 13;
+        self.0 ^= self.0 >> 17;
+        self.0 ^= self.0 << 5;
+        self.0
+    }
+}
+
+// Dispersa organismos por todo el tablero en posiciones al azar, revisando
+// que las cajas de cada organismo no se encimen con las ya colocadas.
 fn place_initial_pattern(fb: &mut Framebuffer) {
-    // --- Franja superior: estructuras grandes ---
-    patterns::gosper_glider_gun(fb, 2, 2); // dispara gliders sin parar
-    patterns::pulsar(fb, 42, 2);
-    patterns::heavyweight_spaceship(fb, 60, 4);
-    patterns::middleweight_spaceship(fb, 70, 4);
-    patterns::pentadecathlon(fb, 80, 6);
+    let organisms = [
+        Organism { place: patterns::gosper_glider_gun, w: 36, h: 9 },
+        Organism { place: patterns::pulsar, w: 13, h: 13 },
+        Organism { place: patterns::heavyweight_spaceship, w: 7, h: 5 },
+        Organism { place: patterns::middleweight_spaceship, w: 6, h: 5 },
+        Organism { place: patterns::pentadecathlon, w: 10, h: 3 },
+        Organism { place: patterns::lightweight_spaceship, w: 5, h: 4 },
+        Organism { place: patterns::diehard, w: 8, h: 3 },
+        Organism { place: patterns::acorn, w: 7, h: 3 },
+        Organism { place: patterns::r_pentomino, w: 3, h: 3 },
+        Organism { place: patterns::loaf, w: 4, h: 4 },
+        Organism { place: patterns::beehive, w: 4, h: 3 },
+        Organism { place: patterns::boat, w: 3, h: 3 },
+        Organism { place: patterns::tub, w: 3, h: 3 },
+        Organism { place: patterns::beacon, w: 4, h: 4 },
+        Organism { place: patterns::toad, w: 4, h: 2 },
+        Organism { place: patterns::block, w: 2, h: 2 },
+        Organism { place: patterns::blinker, w: 3, h: 1 },
+        Organism { place: patterns::glider, w: 3, h: 3 },
+    ];
 
-    // --- Franja media: osciladores chicos, still lifes y naves ---
-    patterns::blinker(fb, 5, 32);
-    patterns::toad(fb, 12, 32);
-    patterns::beacon(fb, 20, 32);
-    patterns::block(fb, 28, 32);
-    patterns::beehive(fb, 34, 32);
-    patterns::loaf(fb, 42, 32);
-    patterns::boat(fb, 50, 32);
-    patterns::tub(fb, 58, 32);
-    patterns::r_pentomino(fb, 66, 32);
-    patterns::lightweight_spaceship(fb, 74, 32);
-    patterns::acorn(fb, 85, 32);
+    // Cuántas veces se repite cada organismo (los grandes una sola vez,
+    // los chicos varias veces para llenar bien la pantalla).
+    let repeats = [1, 1, 1, 1, 1, 3, 2, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 6];
 
-    // --- Franja inferior: methuselahs y gliders sueltos ---
-    patterns::diehard(fb, 10, 55);
-    patterns::glider(fb, 30, 60);
-    patterns::glider(fb, 55, 58);
-    patterns::glider(fb, 75, 62);
-    patterns::glider(fb, 15, 80);
-    patterns::glider(fb, 45, 85);
-    patterns::glider(fb, 70, 80);
+    let mut rng = Rng(0x9E3779B9);
+    let mut placed: Vec<(i32, i32, i32, i32)> = Vec::new();
+    let margin = 2;
+
+    for (organism, &count) in organisms.iter().zip(repeats.iter()) {
+        for _ in 0..count {
+            for _attempt in 0..300 {
+                let max_x = FRAMEBUFFER_WIDTH as i32 - organism.w - 4;
+                let max_y = FRAMEBUFFER_HEIGHT as i32 - organism.h - 4;
+                let x = 2 + (rng.next() % max_x as u32) as i32;
+                let y = 2 + (rng.next() % max_y as u32) as i32;
+
+                let overlaps = placed.iter().any(|&(px, py, pw, ph)| {
+                    x - margin < px + pw + margin
+                        && x + organism.w + margin > px - margin
+                        && y - margin < py + ph + margin
+                        && y + organism.h + margin > py - margin
+                });
+
+                if !overlaps {
+                    (organism.place)(fb, x, y);
+                    placed.push((x, y, organism.w, organism.h));
+                    break;
+                }
+            }
+        }
+    }
 }
