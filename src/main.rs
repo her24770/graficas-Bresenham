@@ -14,9 +14,13 @@ const FRAMEBUFFER_HEIGHT: usize = 100;
 fn main() {
     let mut current = Framebuffer::new(FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT);
     let mut next = Framebuffer::new(FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT);
-    current.set_background_color(0x000000);
-    next.set_background_color(0x000000);
+    current.set_background_color(life::BACKGROUND);
+    next.set_background_color(life::BACKGROUND);
     current.clear();
+
+    // Cuántos turnos seguidos lleva viva cada celda (solo afecta el color).
+    let mut current_age = vec![0u32; FRAMEBUFFER_WIDTH * FRAMEBUFFER_HEIGHT];
+    let mut next_age = vec![0u32; FRAMEBUFFER_WIDTH * FRAMEBUFFER_HEIGHT];
 
     place_initial_pattern(&mut current);
 
@@ -31,16 +35,29 @@ fn main() {
     let frame_delay = Duration::from_millis(120);
 
     while window.is_open() && !window.is_key_down(Key::Escape) {
-        render(&mut current, &mut next, &mut window);
+        render(
+            &mut current,
+            &mut next,
+            &mut current_age,
+            &mut next_age,
+            &mut window,
+        );
         std::thread::sleep(frame_delay);
     }
 }
 
 // Un turno completo: calcula el siguiente estado, intercambia los buffers
 // y presenta el resultado en la ventana.
-fn render(current: &mut Framebuffer, next: &mut Framebuffer, window: &mut Window) {
-    life::step(current, next);
+fn render(
+    current: &mut Framebuffer,
+    next: &mut Framebuffer,
+    current_age: &mut Vec<u32>,
+    next_age: &mut Vec<u32>,
+    window: &mut Window,
+) {
+    life::step(current, next, current_age, next_age);
     std::mem::swap(current, next);
+    std::mem::swap(current_age, next_age);
 
     window
         .update_with_buffer(&current.buffer, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT)

@@ -3,7 +3,7 @@ use crate::life;
 
 // Coloca un organismo: `cells` son coordenadas relativas a un origen (ox, oy).
 fn place(fb: &mut Framebuffer, ox: i32, oy: i32, cells: &[(i32, i32)]) {
-    fb.set_current_color(life::ALIVE);
+    fb.set_current_color(life::color_for_age(0));
     for &(dx, dy) in cells {
         let x = ox + dx;
         let y = oy + dy;
