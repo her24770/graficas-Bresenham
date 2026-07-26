@@ -1,14 +1,15 @@
 mod framebuffer;
 mod life;
+mod patterns;
 
 use framebuffer::Framebuffer;
 use minifb::{Key, Window, WindowOptions};
 use std::time::Duration;
 
 const WINDOW_WIDTH: usize = 800;
-const WINDOW_HEIGHT: usize = 600;
-const FRAMEBUFFER_WIDTH: usize = 80;
-const FRAMEBUFFER_HEIGHT: usize = 60;
+const WINDOW_HEIGHT: usize = 800;
+const FRAMEBUFFER_WIDTH: usize = 100;
+const FRAMEBUFFER_HEIGHT: usize = 100;
 
 fn main() {
     let mut current = Framebuffer::new(FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT);
@@ -17,12 +18,7 @@ fn main() {
     next.set_background_color(0x000000);
     current.clear();
 
-    // Patrón de prueba temporal: un glider, para confirmar que las reglas
-    // funcionan antes de agregar el resto de los organismos en patterns.rs.
-    current.set_current_color(life::ALIVE);
-    for (x, y) in [(11, 10), (12, 11), (10, 12), (11, 12), (12, 12)] {
-        current.point(x, y);
-    }
+    place_initial_pattern(&mut current);
 
     let mut window = Window::new(
         "Game of Life",
@@ -44,4 +40,29 @@ fn main() {
 
         std::thread::sleep(frame_delay);
     }
+}
+
+fn place_initial_pattern(fb: &mut Framebuffer) {
+    // Gun: dispara gliders sin parar hacia la esquina inferior derecha.
+    patterns::gosper_glider_gun(fb, 2, 5);
+
+    // Oscillator grande.
+    patterns::pulsar(fb, 50, 5);
+
+    // Spaceships.
+    patterns::lightweight_spaceship(fb, 75, 8);
+    patterns::glider(fb, 10, 65);
+    patterns::glider(fb, 60, 70);
+
+    // Osciladores chicos.
+    patterns::blinker(fb, 10, 30);
+    patterns::toad(fb, 20, 30);
+    patterns::beacon(fb, 30, 30);
+
+    // Still lifes.
+    patterns::block(fb, 45, 30);
+    patterns::beehive(fb, 55, 30);
+    patterns::loaf(fb, 65, 30);
+    patterns::boat(fb, 78, 30);
+    patterns::tub(fb, 88, 30);
 }

@@ -21,16 +21,19 @@ impl Framebuffer {
         }
     }
 
+    // limpieza
     pub fn clear(&mut self) {
         for pixel in self.buffer.iter_mut() {
             *pixel = self.background_color;
         }
     }
 
+    //asignar color de fondo
     pub fn set_background_color(&mut self, color: u32) {
         self.background_color = color;
     }
 
+    // asignar color activo
     pub fn set_current_color(&mut self, color: u32) {
         self.current_color = color;
     }
